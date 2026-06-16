@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retur & RH Expired (Firebase Cloud)</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Manajemen%20Retur%20RH%22,%22short_name%22:%22ReturRH%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f6f9%22,%22theme_color%22:%22%2334495e%22,%22orientation%22:%22portrait-primary%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/5654/5654067.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+    <meta name="theme-color" content="#34495e">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px;}
+        .status-cloud { text-align: center; color: #27ae60; font-size: 12px; margin-bottom: 20px; font-weight: bold;}
+        .form-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-add { background-color: #2ecc71; color: white; border: none; }
+        .btn-add:hover { background-color: #27ae60; }
+        .btn-copy { background-color: #3498db; color: white; border: none; margin-bottom: 10px; }
+        .btn-copy:hover { background-color: #2980b9; }
+        .btn-clear { background-color: #e74c3c; color: white; border: none; margin-bottom: 10px; float: right; }
+        .btn-clear:hover { background-color: #c0392b; }
+        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; }
+        
+        /* Tombol Install Khusus Chrome */
+        .btn-install {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: none;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th { background-color: #34495e; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .warning { color: #e74c3c; font-weight: bold; }
+        .safe { color: #27ae60; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button id="btnInstall" class="btn-install">📲 TAMBAH KE LAYAR UTAMA (INSTALL)</button>
+
+    <h2>Input Item Retur / RH Expired</h2>
+    <div class="status-cloud">☁️ Connected to Firebase Singapore Cloud: list-rh</div>
+    
+    <div class="form-group">
+        <input type="text" id="deskripsi" placeholder="Nama / Deskripsi Barang" required>
+        <select id="rh">
+            <option value="RH 1">RH 1</option>
+            <option value="RH 2">RH 2</option>
+            <option value="RH 3">RH 3</option>
+            <option value="Retur Toko">Retur Toko</option>
+        </select>
+        <input type="date" id="tglExpired" required>
+        <input type="number" id="qty" placeholder="Qty" min="1" required>
+        <button class="btn-add" onclick="tambahItem()">Tambah</button>
+    </div>
+
+    <hr>
+
+    <button class="btn-copy" onclick="copyFormatWA()">📋 Copy Format WA</button>
+    <button class="btn-clear" onclick="hapusSemua()">🗑️ Bersihkan Semua</button>
+
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Deskripsi</th>
+                    <th>RH/Kategori</th>
+                    <th>Tanggal Expired</th>
+                    <th>Qty</th>
+                    <th>Hitung Mundur</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabelBody">
+                <tr><td colspan="7" style="text-align:center;">Mengambil data dari cloud...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBKR6E2MMlvsEdPOQA_q_I8C1i_jVLcaHc",
+        authDomain: "list-rh.firebaseapp.com",
+        databaseURL: "https://list-rh-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "list-rh",
+        storageBucket: "list-rh.firebasestorage.app",
+        messagingSenderId: "1091897270060",
+        appId: "1:1091897270060:web:fbf66bec80c7507bce5689",
+        measurementId: "G-PNB9FRF78W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db, 'retur_items');
+
+    let localItemsArray = [];
+
+    onValue(dbRef, (snapshot) => {
+        const data = snapshot.val();
+        const tbody = document.getElementById('tabelBody');
+        tbody.innerHTML = '';
+        localItemsArray = [];
+
+        if (data) {
+            let index = 1;
+            for (let id in data) {
+                const item = data[id];
+                localItemsArray.push(item);
+
+                const row = `
+                    <tr>
+                        <td>${index}</td>
+                        <td><b>${item.deskripsi}</b></td>
+                        <td>${item.rh}</td>
+                        <td>${formatTglTeks(item.tglExpired)}</td>
+                        <td>${item.qty}</td>
+                        <td>${hitungHari(item.tglExpired)}</td>
+                        <td><button class="btn-delete" onclick="hapusItem('${id}')">Hapus</button></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+                index++;
+            }
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#999;">Belum ada data items di Cloud Firebase.</td></tr>`;
+        }
+    });
+
+    window.tambahItem = function() {
+        const deskripsi = document.getElementById('deskripsi').value;
+        const rh = document.getElementById('rh').value;
+        const tglExpired = document.getElementById('tglExpired').value;
+        const qty = document.getElementById('qty').value;
+
+        if (!deskripsi || !tglExpired || !qty) {
+            alert('Mohon isi semua kolom terlebih dahulu!');
+            return;
+        }
+
+        const newItemRef = push(dbRef);
+        set(newItemRef, { deskripsi, rh, tglExpired, qty })
+        .then(() => {
+            document.getElementById('deskripsi').value = '';
+            document.getElementById('tglExpired').value = '';
+            document.getElementById('qty').value = '';
+        })
+        .catch((error) => alert("Error: " + error.message));
+    }
+
+    window.hapusItem = function(id) {
+        if(confirm("Hapus item ini dari cloud?")) {
+            remove(ref(db, `retur_items/${id}`));
+        }
+    }
+
+    window.hapusSemua = function() {
+        if(confirm("Apakah Anda yakin ingin menghapus SEMUA list di cloud?")) {
+            remove(dbRef);
+        }
+    }
+
+    window.copyFormatWA = function() {
+        if (localItemsArray.length === 0) {
+            alert("List masih kosong, tidak ada data untuk disalin.");
+            return;
+        }
+
+        let teksWA = `*LAPORAN LIST ITEM RETUR / RH EXPIRED*\n`;
+        teksWA += `Tanggal Laporan: ${formatTglTeks(new Date())}\n`;
+        teksWA += `===============================\n\n`;
+
+        localItemsArray.forEach((item, index) => {
+            const tglSekarang = new Date().setHours(0,0,0,0);
+            const tglTarget = new Date(item.tglExpired).setHours(0,0,0,0);
+            const selisihHari = Math.ceil((tglTarget - tglSekarang) / (1000 * 60 * 60 * 24));
+            let sisaHariTeks = selisihHari < 0 ? `EXPIRED (${Math.abs(selisihHari)} hr lalu)` : (selisihHari === 0 ? `HARI INI` : `${selisihHari} Hari lagi`);
+
+            teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Qty: ${item.qty} (${sisaHariTeks})\n`;
+        });
+
+        teksWA += `\n===============================\n_Mohon untuk segera diproses._`;
+
+        navigator.clipboard.writeText(teksWA).then(() => {
+            alert("📋 Format laporan berhasil disalin! Tinggal paste (Ctrl+V) di WhatsApp.");
+        }).catch(err => alert("Gagal menyalin teks otomatis."));
+    }
+
+    function hitungHari(tglExp) {
+        const tglSekarang = new Date();
+        const tglTarget = new Date(tglExp);
+        tglSekarang.setHours(0,0,0,0);
+        tglTarget.setHours(0,0,0,0);
+        const selisihHari = Math.ceil((tglTarget - tglSekarang) / (1000 * 60 * 60 * 24));
+        
+        if (selisihHari < 0) return `<span class="warning">Expired (${Math.abs(selisihHari)} hari lalu)</span>`;
+        if (selisihHari === 0) return `<span class="warning">Hari Ini!</span>`;
+        return `<span class="safe">${selisihHari} Hari lagi</span>`;
+    }
+
+    function formatTglTeks(tgl) {
+        const d = new Date(tgl);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+</script>
+
+<script>
+    // Membuat Service Worker inline otomatis melalui Blob URL
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl, { scope: './' })
+        .then(() => console.log("Service Worker terdaftar dari Blob."))
+        .catch(err => console.error("SW Gagal:", err));
+    }
+
+    let deferredPrompt;
+    const btnInstall = document.getElementById('btnInstall');
+
+    // Memicu deteksi instalasi otomatis dari browser Google Chrome
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        btnInstall.style.display = 'block'; // Munculkan tombol di atas layar aplikasi
+    });
+
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                btnInstall.style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        btnInstall.style.display = 'none';
+        alert('🎉 Aplikasi sukses terpasang di layar utama Anda!');
+    });
+</script>
+</body>
+</html>
