@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retur & RH Expired (Firebase Cloud)</title>
+    <title>LIST RH - Retur & Expired</title>
     
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Manajemen%20Retur%20RH%22,%22short_name%22:%22ReturRH%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f6f9%22,%22theme_color%22:%22%2334495e%22,%22orientation%22:%22portrait-primary%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/5654/5654067.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
-    <meta name="theme-color" content="#34495e">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22LIST%20RH%22,%22short_name%22:%22LIST%20RH%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f6f9%22,%22theme_color%22:%22%23e74c3c%22,%22orientation%22:%22portrait-primary%22,%22icons%22:[{%22src%22:%22https://dummyimage.com/512x512/e74c3c/ffffff.png%26text=EXPIRED%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+    <meta name="theme-color" content="#e74c3c">
     
     <style>
         body {
@@ -51,7 +51,7 @@
         
         /* Tombol Install Khusus Chrome */
         .btn-install {
-            background-color: #f39c12;
+            background-color: #e74c3c;
             color: white;
             border: none;
             width: 100%;
@@ -60,6 +60,13 @@
             font-size: 16px;
             display: none;
             border-radius: 4px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
         
         table {
@@ -81,7 +88,7 @@
 <body>
 
 <div class="container">
-    <button id="btnInstall" class="btn-install">📲 TAMBAH KE LAYAR UTAMA (INSTALL)</button>
+    <button id="btnInstall" class="btn-install">📲 TAMBAH "LIST RH" KE LAYAR UTAMA</button>
 
     <h2>Input Item Retur / RH Expired</h2>
     <div class="status-cloud">☁️ Connected to Firebase Singapore Cloud: list-rh</div>
@@ -89,10 +96,11 @@
     <div class="form-group">
         <input type="text" id="deskripsi" placeholder="Nama / Deskripsi Barang" required>
         <select id="rh">
-            <option value="RH 1">RH 1</option>
-            <option value="RH 2">RH 2</option>
-            <option value="RH 3">RH 3</option>
-            <option value="Retur Toko">Retur Toko</option>
+            <option value="RH14">RH14</option>
+            <option value="RH30">RH30</option>
+            <option value="RH60">RH60</option>
+            <option value="RH90">RH90</option>
+            <option value="RH180">RH180</option>
         </select>
         <input type="date" id="tglExpired" required>
         <input type="number" id="qty" placeholder="Qty" min="1" required>
@@ -254,7 +262,6 @@
 </script>
 
 <script>
-    // Membuat Service Worker inline otomatis melalui Blob URL
     if ('serviceWorker' in navigator) {
         const swCode = `
             self.addEventListener('install', e => self.skipWaiting());
@@ -265,18 +272,17 @@
         const swUrl = URL.createObjectURL(blob);
         
         navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(() => console.log("Service Worker terdaftar dari Blob."))
+        .then(() => console.log("Service Worker terdaftar."))
         .catch(err => console.error("SW Gagal:", err));
     }
 
     let deferredPrompt;
     const btnInstall = document.getElementById('btnInstall');
 
-    // Memicu deteksi instalasi otomatis dari browser Google Chrome
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        btnInstall.style.display = 'block'; // Munculkan tombol di atas layar aplikasi
+        btnInstall.style.display = 'block';
     });
 
     btnInstall.addEventListener('click', async () => {
@@ -292,7 +298,7 @@
 
     window.addEventListener('appinstalled', () => {
         btnInstall.style.display = 'none';
-        alert('🎉 Aplikasi sukses terpasang di layar utama Anda!');
+        alert('🎉 Aplikasi LIST RH sukses terpasang di layar utama Anda!');
     });
 </script>
 </body>
