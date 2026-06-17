@@ -26,6 +26,7 @@
         }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 5px;}
         .status-cloud { text-align: center; color: #27ae60; font-size: 12px; margin-bottom: 20px; font-weight: bold;}
+        
         .section-title {
             background-color: #34495e;
             color: white;
@@ -39,12 +40,23 @@
         .section-gudang {
             background-color: #d35400 !important;
         }
+        
         .form-group {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 10px;
             margin-bottom: 20px;
         }
+        
+        /* Pembungkus Tombol Aksi (Mencegah Tumpang Tindih) */
+        .action-group {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
         input, select, button {
             padding: 10px;
             border: 1px solid #ccc;
@@ -55,14 +67,19 @@
             cursor: pointer;
             font-weight: bold;
         }
+        
         .btn-add { background-color: #2ecc71; color: white; border: none; }
         .btn-add:hover { background-color: #27ae60; }
-        .btn-copy { background-color: #3498db; color: white; border: none; margin-bottom: 10px; }
+        
+        .btn-copy { background-color: #3498db; color: white; border: none; }
         .btn-copy:hover { background-color: #2980b9; }
-        .btn-copy-gudang { background-color: #e67e22; color: white; border: none; margin-bottom: 10px; }
+        
+        .btn-copy-gudang { background-color: #e67e22; color: white; border: none; }
         .btn-copy-gudang:hover { background-color: #d35400; }
-        .btn-clear { background-color: #e74c3c; color: white; border: none; margin-bottom: 10px; float: right; }
+        
+        .btn-clear { background-color: #e74c3c; color: white; border: none; }
         .btn-clear:hover { background-color: #c0392b; }
+        
         .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; }
         
         /* Tombol Install Khusus Chrome */
@@ -88,7 +105,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 5px;
             margin-bottom: 15px;
         }
         th, td {
@@ -127,8 +144,10 @@
         <button class="btn-add" onclick="tambahItemToko()">Tambah Ke Toko</button>
     </div>
 
-    <button class="btn-copy" onclick="simpanDanSalinTokoWA()">📋 Simpan & Salin Data Toko</button>
-    <button class="btn-clear" onclick="hapusSemuaToko()">🗑️ Bersihkan Tabel Toko</button>
+    <div class="action-group">
+        <button class="btn-copy" onclick="simpanDanSalinTokoWA()">📋 Simpan & Salin Data Toko</button>
+        <button class="btn-clear" onclick="hapusSemuaToko()">🗑️ Bersihkan Tabel Toko</button>
+    </div>
 
     <div style="overflow-x: auto;">
         <table>
@@ -167,8 +186,10 @@
         <button class="btn-add" style="background-color: #e67e22;" onclick="tambahItemGudang()">Tambah Ke Gudang</button>
     </div>
 
-    <button class="btn-copy-gudang" onclick="simpanDanSalinGudangWA()">📋 Simpan & Salin Data Gudang</button>
-    <button class="btn-clear" onclick="hapusSemuaGudang()">🗑️ Bersihkan Tabel Gudang</button>
+    <div class="action-group">
+        <button class="btn-copy-gudang" onclick="simpanDanSalinGudangWA()">📋 Simpan & Salin Data Gudang</button>
+        <button class="btn-clear" onclick="hapusSemuaGudang()">🗑️ Bersihkan Tabel Gudang</button>
+    </div>
 
     <div style="overflow-x: auto;">
         <table>
@@ -334,7 +355,6 @@
         if (localGudangArray.length === 0) return alert("List Gudang masih kosong.");
         let teksWA = `*LAPORAN RETUR AREA GUDANG (DOS)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
         localGudangArray.forEach((item, index) => {
-            // SEKARANG SUDAH MEMASUKKAN DATA BATAS RETUR SECARA LENGKAP
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Dos*\n`;
         });
         teksWA += `\n===============================\n_Mohon gudang segera menyiapkan produk di atas._`;
@@ -351,6 +371,7 @@
         });
     }
 
+    // Rumus Batas Retur = Expired - Nilai Hari RH
     function hitungTglBatasRetur(tglExpStr, rhStr) {
         const tgl = new Date(tglExpStr);
         const nilaiRH = parseInt(rhStr.replace("RH", ""), 10);
