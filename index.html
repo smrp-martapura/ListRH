@@ -110,7 +110,7 @@
 
     <hr>
 
-    <button class="btn-copy" onclick="copyFormatWA()">📋 Copy Format WA</button>
+    <button class="btn-copy" onclick="simpanDanSalinWA()">📋 Simpan & Salin</button>
     <button class="btn-clear" onclick="hapusSemua()">🗑️ Bersihkan Semua</button>
 
     <div style="overflow-x: auto;">
@@ -166,7 +166,6 @@
             for (let id in data) {
                 const item = data[id];
                 
-                // Hitung tanggal batas retur (Tgl Expired - Nilai RH)
                 const tglBatasReturObj = hitungTglBatasRetur(item.tglExpired, item.rh);
                 item.tglBatasReturStr = tglBatasReturObj.toISOString().split('T')[0];
                 
@@ -225,7 +224,8 @@
         }
     }
 
-    window.copyFormatWA = function() {
+    // Fungsi Gabungan: Simpan, Salin, & Buka Kirim WhatsApp ke Penerima Bebas
+    window.simpanDanSalinWA = function() {
         if (localItemsArray.length === 0) {
             alert("List masih kosong, tidak ada data untuk disalin.");
             return;
@@ -247,21 +247,25 @@
 
         teksWA += `\n===============================\n_Mohon untuk segera diproses ke gudang._`;
 
+        // Proses 1: Salin teks laporan ke Clipboard internal sistem HP/Laptop
         navigator.clipboard.writeText(teksWA).then(() => {
-            alert("📋 Format laporan berhasil disalin! Tinggal paste (Ctrl+V) di WhatsApp.");
-        }).catch(err => alert("Gagal menyalin teks otomatis."));
+            // Proses 2: Langsung alihkan dan buka aplikasi WhatsApp bawaan untuk pilih kontak penerima
+            const linkWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`;
+            window.open(linkWA, '_blank');
+        }).catch(err => {
+            // Backup jika navigator clipboard diblokir oleh kebijakan browser tertentu
+            const linkWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`;
+            window.open(linkWA, '_blank');
+        });
     }
 
-    // Fungsi menghitung tanggal batas retur (Tanggal Expired - Angka RH)
     function hitungTglBatasRetur(tglExpStr, rhStr) {
         const tgl = new Date(tglExpStr);
-        // Mengambil angka dari teks RH (misal "RH14" diambil 14)
         const nilaiRH = parseInt(rhStr.replace("RH", ""), 10);
         tgl.setDate(tgl.getDate() - nilaiRH);
         return tgl;
     }
 
-    // Fungsi Hitung Mundur menuju Batas Retur
     function hitungHariMundur(tglBatasReturStr) {
         const tglSekarang = new Date();
         const tglTarget = new Date(tglBatasReturStr);
