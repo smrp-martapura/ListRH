@@ -209,7 +209,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     
-    // Referensi Database terpisah
     const tokoRef = ref(db, 'retur_items');
     const gudangRef = ref(db, 'gudang_items');
 
@@ -335,6 +334,7 @@
         if (localGudangArray.length === 0) return alert("List Gudang masih kosong.");
         let teksWA = `*LAPORAN RETUR AREA GUDANG (DOS)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
         localGudangArray.forEach((item, index) => {
+            // SEKARANG SUDAH MEMASUKKAN DATA BATAS RETUR SECARA LENGKAP
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Dos*\n`;
         });
         teksWA += `\n===============================\n_Mohon gudang segera menyiapkan produk di atas._`;
