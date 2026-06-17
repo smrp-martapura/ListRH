@@ -25,7 +25,6 @@
             margin-bottom: 30px;
         }
         
-        /* Banner Identitas Toko di Atas */
         .store-banner {
             text-align: center;
             background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -91,9 +90,12 @@
         .btn-clear { background-color: #e74c3c; color: white; border: none; }
         .btn-clear:hover { background-color: #c0392b; }
         
-        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; }
+        /* Tombol Aksi Tabel Sampingan */
+        .btn-action-copy { background-color: #3498db; color: white; border: none; padding: 5px 8px; font-size: 12px; border-radius: 3px; margin-right: 4px; }
+        .btn-action-copy:hover { background-color: #2980b9; }
+        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 5px 8px; font-size: 12px; border-radius: 3px; }
+        .btn-delete:hover { background-color: #c0392b; }
         
-        /* Tombol Install Khusus Chrome */
         .btn-install {
             background-color: #e74c3c;
             color: white;
@@ -130,6 +132,7 @@
         .warning { color: #e74c3c; font-weight: bold; }
         .safe { color: #27ae60; }
         .info-tgl { color: #2980b9; font-weight: bold; }
+        .flex-actions { display: flex; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -160,7 +163,7 @@
     </div>
 
     <div class="action-group">
-        <button class="btn-copy" onclick="simpanDanSalinTokoWA()">📋 Simpan & Salin Data Toko</button>
+        <button class="btn-copy" onclick="simpanDanSalinTokoWA()">📋 Simpan & Salin Semua Data Toko</button>
         <button class="btn-clear" onclick="hapusSemuaToko()">🗑️ Bersihkan Tabel Toko</button>
     </div>
 
@@ -202,7 +205,7 @@
     </div>
 
     <div class="action-group">
-        <button class="btn-copy-gudang" onclick="simpanDanSalinGudangWA()">📋 Simpan & Salin Data Gudang</button>
+        <button class="btn-copy-gudang" onclick="simpanDanSalinGudangWA()">📋 Simpan & Salin Semua Data Gudang</button>
         <button class="btn-clear" onclick="hapusSemuaGudang()">🗑️ Bersihkan Tabel Gudang</button>
     </div>
 
@@ -248,39 +251,65 @@
     const tokoRef = ref(db, 'retur_items');
     const gudangRef = ref(db, 'gudang_items');
 
-    let localTokoArray = [];
-    let localGudangArray = [];
+    // Deklarasi global fungsi enkapsulasi salin satuan agar bisa diakses HTML onClick
+    window.salinSatuItem = function(deskripsi, rh, tglExp, tglBatas, qty, satuan, area) {
+        let teksWA = `*LAPORAN RETUR INDIVIDU AREA ${area.toUpperCase()} (${satuan.toUpperCase()})*\n`;
+        teksWA += `*TOKO: 1GCX (SIMPANG MARTAPURA)*\n`;
+        teksWA += `===============================\n\n`;
+        teksWA += `1. *${deskripsi}* / ${rh} / Exp: ${tglExp} / Batas Retur: ${tglBatas} / Qty: *${qty} ${satuan}*\n\n`;
+        teksWA += `===============================\n_Mohon segera ditindaklanjuti._`;
+        
+        navigator.clipboard.writeText(teksWA).then(() => {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`, '_blank');
+        }).catch(() => {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`, '_blank');
+        });
+    }
 
     // --- LOGIKA AREA TOKO ---
     onValue(tokoRef, (snapshot) => {
         const data = snapshot.val();
         const tbody = document.getElementById('toko_tabelBody');
         tbody.innerHTML = '';
-        localTokoArray = [];
+        let itemsTemp = [];
 
         if (data) {
-            let index = 1;
             for (let id in data) {
                 const item = data[id];
                 const tglBatasReturObj = hitungTglBatasRetur(item.tglExpired, item.rh);
+                item.id = id;
                 item.tglBatasReturStr = tglBatasReturObj.toISOString().split('T')[0];
-                localTokoArray.push(item);
+                itemsTemp.push(item);
+            }
 
+            // PROSES SORTING: Tanggal Batas Retur paling lampau / terdekat ditaruh di paling atas
+            itemsTemp.sort((a, b) => new Date(a.tglBatasReturStr) - new Date(b.tglBatasReturStr));
+            window.localTokoArray = itemsTemp;
+
+            itemsTemp.forEach((item, index) => {
+                const tglExpFmt = formatTglTeks(item.tglExpired);
+                const tglBatasFmt = formatTglTeks(item.tglBatasReturStr);
+                
                 tbody.innerHTML += `
                     <tr>
-                        <td>${index}</td>
+                        <td>${index + 1}</td>
                         <td><b>${item.deskripsi}</b></td>
                         <td>${item.rh}</td>
-                        <td>${formatTglTeks(item.tglExpired)}</td>
-                        <td class="info-tgl">${formatTglTeks(item.tglBatasReturStr)}</td>
+                        <td>${tglExpFmt}</td>
+                        <td class="info-tgl">${tglBatasFmt}</td>
                         <td>${item.qty} Pcs</td>
                         <td>${hitungHariMundur(item.tglBatasReturStr)}</td>
-                        <td><button class="btn-delete" onclick="hapusItemToko('${id}')">Hapus</button></td>
+                        <td>
+                            <div class="flex-actions">
+                                <button class="btn-action-copy" onclick="salinSatuItem('${item.deskripsi}', '${item.rh}', '${tglExpFmt}', '${tglBatasFmt}', '${item.qty}', 'Pcs', 'Toko')">Salin</button>
+                                <button class="btn-delete" onclick="hapusItemToko('${item.id}')">Hapus</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
-                index++;
-            }
+            });
         } else {
+            window.localTokoArray = [];
             tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#999;">Belum ada data retur Toko.</td></tr>`;
         }
     });
@@ -304,9 +333,9 @@
     window.hapusSemuaToko = function() { if(confirm("Hapus SEMUA data Toko?")) remove(tokoRef); }
 
     window.simpanDanSalinTokoWA = function() {
-        if (localTokoArray.length === 0) return alert("List Toko masih kosong.");
+        if (!window.localTokoArray || window.localTokoArray.length === 0) return alert("List Toko masih kosong.");
         let teksWA = `*LAPORAN RETUR AREA TOKO (PCS)*\n*TOKO: 1GCX (SIMPANG MARTAPURA)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
-        localTokoArray.forEach((item, index) => {
+        window.localTokoArray.forEach((item, index) => {
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Pcs*\n`;
         });
         teksWA += `\n===============================\n_Mohon segera diproses._`;
@@ -319,31 +348,45 @@
         const data = snapshot.val();
         const tbody = document.getElementById('gudang_tabelBody');
         tbody.innerHTML = '';
-        localGudangArray = [];
+        let itemsTemp = [];
 
         if (data) {
-            let index = 1;
             for (let id in data) {
                 const item = data[id];
                 const tglBatasReturObj = hitungTglBatasRetur(item.tglExpired, item.rh);
+                item.id = id;
                 item.tglBatasReturStr = tglBatasReturObj.toISOString().split('T')[0];
-                localGudangArray.push(item);
+                itemsTemp.push(item);
+            }
+
+            // PROSES SORTING: Tanggal Batas Retur paling lampau / terdekat ditaruh di paling atas
+            itemsTemp.sort((a, b) => new Date(a.tglBatasReturStr) - new Date(b.tglBatasReturStr));
+            window.localGudangArray = itemsTemp;
+
+            itemsTemp.forEach((item, index) => {
+                const tglExpFmt = formatTglTeks(item.tglExpired);
+                const tglBatasFmt = formatTglTeks(item.tglBatasReturStr);
 
                 tbody.innerHTML += `
                     <tr>
-                        <td>${index}</td>
+                        <td>${index + 1}</td>
                         <td><b>${item.deskripsi}</b></td>
                         <td>${item.rh}</td>
-                        <td>${formatTglTeks(item.tglExpired)}</td>
-                        <td class="info-tgl">${formatTglTeks(item.tglBatasReturStr)}</td>
+                        <td>${tglExpFmt}</td>
+                        <td class="info-tgl">${tglBatasFmt}</td>
                         <td><b>${item.qty} Dos</b></td>
                         <td>${hitungHariMundur(item.tglBatasReturStr)}</td>
-                        <td><button class="btn-delete" onclick="hapusItemGudang('${id}')">Hapus</button></td>
+                        <td>
+                            <div class="flex-actions">
+                                <button class="btn-action-copy" onclick="salinSatuItem('${item.deskripsi}', '${item.rh}', '${tglExpFmt}', '${tglBatasFmt}', '${item.qty}', 'Dos', 'Gudang')">Salin</button>
+                                <button class="btn-delete" onclick="hapusItemGudang('${item.id}')">Hapus</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
-                index++;
-            }
+            });
         } else {
+            window.localGudangArray = [];
             tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#999;">Belum ada data retur Gudang.</td></tr>`;
         }
     });
@@ -367,9 +410,9 @@
     window.hapusSemuaGudang = function() { if(confirm("Hapus SEMUA data Gudang?")) remove(gudangRef); }
 
     window.simpanDanSalinGudangWA = function() {
-        if (localGudangArray.length === 0) return alert("List Gudang masih kosong.");
+        if (!window.localGudangArray || window.localGudangArray.length === 0) return alert("List Gudang masih kosong.");
         let teksWA = `*LAPORAN RETUR AREA GUDANG (DOS)*\n*TOKO: 1GCX (SIMPANG MARTAPURA)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
-        localGudangArray.forEach((item, index) => {
+        window.localGudangArray.forEach((item, index) => {
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Dos*\n`;
         });
         teksWA += `\n===============================\n_Mohon gudang segera menyiapkan produk di atas._`;
