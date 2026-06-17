@@ -24,7 +24,19 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 30px;
         }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px;}
+        
+        /* Banner Identitas Toko di Atas */
+        .store-banner {
+            text-align: center;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .store-banner h1 { margin: 0; font-size: 22px; letter-spacing: 1px; }
+        .store-banner p { margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7; font-weight: bold; }
+
         .status-cloud { text-align: center; color: #27ae60; font-size: 12px; margin-bottom: 20px; font-weight: bold;}
         
         .section-title {
@@ -48,7 +60,6 @@
             margin-bottom: 20px;
         }
         
-        /* Pembungkus Tombol Aksi (Mencegah Tumpang Tindih) */
         .action-group {
             display: flex;
             justify-content: space-between;
@@ -126,7 +137,11 @@
 <div class="container">
     <button id="btnInstall" class="btn-install">📲 TAMBAH "LIST RH" KE LAYAR UTAMA</button>
 
-    <h2>MANAJEMEN RETUR & EXPIRED</h2>
+    <div class="store-banner">
+        <h1>1GCX (SIMPANG MARTAPURA)</h1>
+        <p>MANAJEMEN KONTROL JADWAL RETUR & EXPIRED</p>
+    </div>
+    
     <div class="status-cloud">☁️ Connected to Firebase Singapore Cloud: list-rh</div>
     
     <div class="section-title">🛒 AREA TOKO (Satuan Pcs/Eceran)</div>
@@ -290,7 +305,7 @@
 
     window.simpanDanSalinTokoWA = function() {
         if (localTokoArray.length === 0) return alert("List Toko masih kosong.");
-        let teksWA = `*LAPORAN RETUR AREA TOKO (PCS)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
+        let teksWA = `*LAPORAN RETUR AREA TOKO (PCS)*\n*TOKO: 1GCX (SIMPANG MARTAPURA)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
         localTokoArray.forEach((item, index) => {
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Pcs*\n`;
         });
@@ -353,7 +368,7 @@
 
     window.simpanDanSalinGudangWA = function() {
         if (localGudangArray.length === 0) return alert("List Gudang masih kosong.");
-        let teksWA = `*LAPORAN RETUR AREA GUDANG (DOS)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
+        let teksWA = `*LAPORAN RETUR AREA GUDANG (DOS)*\n*TOKO: 1GCX (SIMPANG MARTAPURA)*\nTanggal: ${formatTglTeks(new Date())}\n===============================\n\n`;
         localGudangArray.forEach((item, index) => {
             teksWA += `${index + 1}. *${item.deskripsi}* / ${item.rh} / Exp: ${formatTglTeks(item.tglExpired)} / Batas Retur: ${formatTglTeks(item.tglBatasReturStr)} / Qty: *${item.qty} Dos*\n`;
         });
@@ -371,7 +386,6 @@
         });
     }
 
-    // Rumus Batas Retur = Expired - Nilai Hari RH
     function hitungTglBatasRetur(tglExpStr, rhStr) {
         const tgl = new Date(tglExpStr);
         const nilaiRH = parseInt(rhStr.replace("RH", ""), 10);
